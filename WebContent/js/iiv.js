@@ -120,37 +120,20 @@ iiv.Viewer = new iiv.Class({
   },
     
   djatokaUrl: function(pid) {
-    return this.pidUrl(pid) + '/ilives:jp2Sdef';
+    return this.pidUrl(pid) + '/islandora:jp2Sdef';
   },
   
   pidUrl: function(pid) {
     return this.fedoraUrl + '/get/' + pid;
   },
   
-  textUrlIsHtml: function(url) {
-    return /tei2html/.test(url);
+  teiUrl: function(pid) {
+    return this.fedoraUrl + '/get/' + pid + '/islandora:tei2htmlSdef/tei2html?uid=' + this.uid;
   },
-    
-  textUrl: function(pid) {
-    switch(this.cmodel) {
-      case 'ilives:bookCModel':
-      case 'ilives:pageCModel':
-      case 'ilives:slideCModel':
-        dsid = '/ilives:tei2htmlSdef/tei2html';
-        break;
-      case 'newspapers:issueCModel':
-      case 'newspapers:pageCModel':
-        dsid = 'OCR';
-        break;
-      case 'islandora-dm:po-document-cmodel':
-      default:
-        dsid = 'text';
-        break;
-    }
-
-    return this.fedoraUrl + '/get/' + pid + '/' + dsid + '?uid=' + this.uid;
+  
+  newspaperTextUrl: function(pid) {
+  	return this.fedoraUrl + '/get/' + pid + '/OCR?uid=' + this.uid;
   },
-
   
   setPage: function(index) {
     if (index != this.pageIndex && index >= 0 && index < this.pids.length) {
@@ -183,47 +166,36 @@ iiv.Viewer = new iiv.Class({
   loadText: function() {
     var container = this.ui.textContainer;
     container.html('');
-
-    url = this.textUrl(this.currentPid());
-    html = this.textUrlIsHtml(url);
-
-    if (html) {
-      jQuery.get(url, function(data) {
-        container.html(data);
+    
+    if (this.cmodel == 'newspapers:issueCModel' || this.cmodel == 'newspapers:pageCModel'  || 'islandora:pageCModel' || 'islandora:bookCModel') {
+      jQuery.get(this.newspaperTextUrl(this.currentPid()), function(data) {
+        container.html('<pre>'+data+'</pre>');
       }, 'html');
     }
     else {
-      jQuery.get(url, function(data) {
-        container.html('<pre>' + data + '</pre>');
+      jQuery.get(this.teiUrl(this.currentPid()), function(data) { 
+        container.html(data); 
       }, 'html');
-    }    
-  },
-
-  printUrl: function () {
-    if (this.cmodel == 'newspapers:issueCModel') {
-      url = this.fedoraUrl + '/get/' + this.currentPid() + '/PagePDF?uid=' + this.uid; 
     }
-    else if (this.cmodel == 'islandora-dm:po-document-cmodel') {
-      url = this.fedoraUrl + '/get/' + this.currentPid() + '/pdf?uid=' + this.uid; 
-    }
-    else {
-      url = this.djatokaPrintUrl();
-    }
-
-    return url;
   },
   
-  djatokaPrintUrl: function() {
+  getPrintUrl: function() {
     var imageExtent = this.map.getMaxExtent();
     var aspect = imageExtent.getWidth() / imageExtent.getHeight();      
     var scale = aspect > 1.3333 ? "600,0" : "0,800";
     var level = '3'; // TODO calculate
-
+	if (this.cmodel == 'newspapers:issueCModel') {
+	  pagePid = this.pids[this.pageIndex];
+	  pageURL = this.fedoraUrl + '/get/' + pagePid + '/PagePDF?uid=' + this.uid;
+	  return pageURL;
+	}
+	else {
     // assemble url
-    var imageUrl = this.djatokaUrl(this.currentPid()) + '/getRegion?uid=' + this.uid + '&level=' + level + '&scale=' + scale; 
-    var printUrl = '/iiv/print.html?pid=' + this.currentPid() + '&image=' + escape(imageUrl);
-
-    return printUrl;
+	  var imageUrl = this.djatokaUrl(this.currentPid()) + '/getRegion?uid=' + this.uid + '&level=' + level + '&scale=' + scale; 
+	  var printUrl = '/iiv/print.html?pid=' + this.currentPid() + '&image=' + escape(imageUrl);
+	
+	  return printUrl;
+    }
   }
 });
 
@@ -254,9 +226,9 @@ iiv.Viewer.UI = new iiv.Class({
 
   createUI: function() {
     var container = jQuery(this.viewer.iivContainer);
-    container.append('<link rel="stylesheet" href="/iiv/css/jquery-ui/smoothness/jquery-ui-1.7.2.custom.css" type="text/css" />');
-    container.append('<link rel="stylesheet" href="/iiv/css/iiv.css" type="text/css"/>');
-    container.append('<!--[if IE]><link rel="stylesheet" href="/iiv/css/ie6.css" type="text/css"><![endif]-->');
+    container.append('<link rel="stylesheet" href="http://'+location.host+'/iiv/css/jquery-ui/smoothness/jquery-ui-1.7.2.custom.css" type="text/css" />');
+    container.append('<link rel="stylesheet" href="http://'+location.host+'/iiv/css/iiv.css" type="text/css"/>');
+    container.append('<!--[if IE]><link rel="stylesheet" href="http://'+location.host+'/iiv/css/ie6.css" type="text/css"><![endif]-->');
 
     var ui = this.createDiv(container, 'iiv-ui ui-corner-all');
     var toolbar = this.createDiv(ui, 'iiv-toolbar');
@@ -304,7 +276,7 @@ iiv.Viewer.UI = new iiv.Class({
 
   createOtherControls: function(toolbar) {
     var controls = this.createControlSet(toolbar, 'other');    
-    this.buttonText = this.createButton(controls, 'text', 'Show text', 'iiv-icon-text');
+    this.buttonText = this.createButton(controls, 'text', 'Show page text', 'iiv-icon-text');
     this.buttonPrint = this.createButton(controls, 'print', 'Print page', 'ui-icon-print');
     return controls;
   },
@@ -431,7 +403,7 @@ iiv.Viewer.UI = new iiv.Class({
   },
   
   printPage: function() {
-    var url = this.viewer.printUrl();
+    var url = this.viewer.getPrintUrl();
     
     // open popup window
     var popupWidth = Math.max(800, Math.min(624, window.screen.availWidth));
@@ -507,10 +479,9 @@ iiv.Viewer.RISearch = new iiv.Class({
   
   initialize: function(options) {
     if (!this.query) {
-      if (this.cmodel == 'ilives:bookCModel') {
+      if (this.cmodel == 'islandora:bookCModel') {
         this.query = 'select $object from <#ri> ' 
-          + 'where ($object <fedora-model:hasModel> <fedora:ilives:pageCModel> ' 
-          + 'and $object <fedora-rels-ext:isMemberOf> <fedora:' + this.pid + '>) ' 
+          + 'where ($object <fedora-rels-ext:isMemberOf> <fedora:' + this.pid + '>) ' 
           + 'order by $object';
       }
       else if (this.cmodel == 'newspapers:issueCModel') {
@@ -519,17 +490,17 @@ iiv.Viewer.RISearch = new iiv.Class({
           + ' and $object <info:fedora/fedora-system:def/relations-external#isPartOf> <info:fedora/'+this.pid+'>)' 
           + ' order by $object'; 
       }
-      else if (this.cmodel == 'ilives:pageCModel') {
+      else if (this.cmodel == 'islandora:pageCModel') {
         this.query = 'select $parent ' 
           + 'subquery (' 
           + '  select $sibling from <#ri> ' 
           + '  where $sibling <fedora-rels-ext:isMemberOf> $parent ' 
-          + '  and $sibling <fedora-model:hasModel> <fedora:ilives:pageCModel> ' 
+          + '  and $sibling <fedora-model:hasModel> <fedora:islandora:pageCModel> ' 
           + '  order by $sibling) ' 
           + 'from <#ri> ' 
           + 'where $child <mulgara:is> <fedora:' + this.pid + '> ' 
           + 'and $child <fedora-rels-ext:isMemberOf> $parent ' 
-          + 'and $parent <fedora-model:hasModel> <fedora:ilives:bookCModel>';
+          + 'and $parent <fedora-model:hasModel> <fedora:islandora:bookCModel>';
       }
       else if (this.cmodel == 'newspapers:pageCModel') {
           this.query = 'select $parent ' 
@@ -554,18 +525,24 @@ iiv.Viewer.RISearch = new iiv.Class({
           + 'where $child <mulgara:is> <fedora:' + this.pid + '> '
           + 'and $child <fedora-rels-ext:isMemberOfCollection> $parent '
           + 'and $parent <fedora-model:hasModel> <fedora:islandora:collectionCModel>';
-      } 
-      else if (this.cmodel == 'islandora-dm:po-document-cmodel') {
-        this.query = 'select $object from <#ri> '
-          + 'where ($object <fedora-model:hasModel> <fedora:islandora-dm:po-page-cmodel> '
-          + 'and $object <fedora-rels-ext:isMemberOf> <fedora:' + this.pid + '>) '
-          + 'order by $object';
       }
- 
+    else if (this.cmodel == 'islandora:sp_large_image_cmodel') {
+        this.query = 'select $parent '
+          + 'subquery ('
+          + '  select $sibling from <#ri> '
+          + '  where $sibling <fedora-rels-ext:isMemberOfCollection> $parent '
+          + '  and $sibling <fedora-model:hasModel> <fedora:islandora:sp_large_image_cmodel> '
+          + '  order by $sibling) '
+          + 'from <#ri> '
+          + 'where $child <mulgara:is> <fedora:' + this.pid + '> '
+          + 'and $child <fedora-rels-ext:isMemberOfCollection> $parent '
+          + 'and $parent <fedora-model:hasModel> <fedora:islandora:collectionCModel>';
+      }
       else {
         // no query -- pid will be used alone.
       }
     }
+
   },
   
   search: function() {
