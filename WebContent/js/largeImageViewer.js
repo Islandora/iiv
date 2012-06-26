@@ -7,7 +7,7 @@ iiv.Class = function(prototype) {
       jQuery.extend(this, options);
       this.initialize.apply(this);
     };
-    
+
     c.prototype = prototype;
     return c;
 };
@@ -20,20 +20,20 @@ iiv.Viewer = new iiv.Class({
   pids: null,
   pageIndex: 0,
   map: null,
-  
+
   initialize: function(options) {
     this.ui = new iiv.Viewer.UI({viewer: this});
     this.riSearch = new iiv.Viewer.RISearch(this.riSearchOptions());
     this.riSearch.search();
     jQuery.iiv = this;
-   
+
   },
-  
+
   intercept: function(object, method, interceptor) {
     object[method + '_without_interceptor'] = object[method];
     object[method] = interceptor;
   },
-  
+
   riSearchOptions: function() {
     var viewer = this;
     return {
@@ -45,7 +45,7 @@ iiv.Viewer = new iiv.Class({
       searchCallback: this.createSearchCallback()
     }
   },
-    
+
   createSearchCallback: function() {
     var viewer = this;
     return function(results) {
@@ -56,13 +56,13 @@ iiv.Viewer = new iiv.Class({
           break;
         }
       }
-      
+
       viewer.loadText();
       viewer.initializeMap();
       viewer.ui.initializeUI();
     };
   },
-  
+
   initializeMap: function() {
   	OpenLayers.Layer.OpenURL.viewerWidth = jQuery('.iiv-canvas').width();
 		OpenLayers.Layer.OpenURL.viewerHeight = jQuery('.iiv-canvas').height();
@@ -75,7 +75,7 @@ iiv.Viewer = new iiv.Class({
     var lat = this.map.maxExtent.height / 2;
     this.map.setCenter(new OpenLayers.LonLat(lon, lat), 0);
   },
-  
+
   createMapControls: function() {
     var controls = [
         new OpenLayers.Control.MouseDefaults(),
@@ -86,10 +86,10 @@ iiv.Viewer = new iiv.Class({
   },
 
   createMapOptions: function(imageLayer) {
-     
+
 
     var metadata = imageLayer.getImageMetadata();
-    var resolutions = imageLayer.getResolutions();        
+    var resolutions = imageLayer.getResolutions();
     var maxExtent = new OpenLayers.Bounds(0, 0, metadata.width, metadata.height);
     var tileSize = imageLayer.getTileSize();
     return options = {resolutions: resolutions, maxExtent: maxExtent, tileSize: tileSize};
@@ -102,45 +102,45 @@ iiv.Viewer = new iiv.Class({
           isBaseLayer : true,
           layername : 'basic',
           format : 'image/jpeg',
-          rft_id :  this.rftUrl(pid), 
+          rft_id :  this.rftUrl(pid),
           metadataUrl : djatokaUrl + '/getMetadata?uid=' + this.uid
         });
-    
+
     imageLayer.djatokaUrl = djatokaUrl;
     imageLayer.uid = this.uid;
     return imageLayer;
   },
-  
+
   rftUrl: function(pid) {
     return this.djatokaUrl(pid) + '/JP2?uid=djatoka';
   },
-  
+
   currentPid: function() {
     return this.pids[this.pageIndex];
   },
-    
+
   djatokaUrl: function(pid) {
-    return this.pidUrl(pid) + '/islandora:jp2Sdef';
+    return this.pidUrl(pid) + '/methods/islandora:jp2Sdef';
   },
-  
+
   pidUrl: function(pid) {
-    return this.fedoraUrl + '/get/' + pid;
+    return this.fedoraUrl + '/objects/' + pid;
   },
     teiUrl: function(pid) {
-    return this.fedoraUrl + '/get/' + pid + '/ilives:tei2htmlSdef/tei2html?uid=' + this.uid;
+    return this.pidUrl(pid) + '/methods/ilives:tei2htmlSdef/tei2html?uid=' + this.uid;
   },
-  
+
   setPage: function(index) {
     if (index != this.pageIndex && index >= 0 && index < this.pids.length) {
       this.pageIndex = index;
       this.loadText();
-      
+
       var nextLayer = this.createImageLayer();
       var options = this.createMapOptions(nextLayer);
       this.map.resolutions = options.resolutions;
       this.map.maxExtent = options.maxExtent;
       this.map.tileSize = options.tileSize;
-      
+
       var baseLayer = this.map.baseLayer;
 
       this.map.addLayer(nextLayer);
@@ -149,33 +149,33 @@ iiv.Viewer = new iiv.Class({
       this.ui.updatePageControls(index);
     }
   },
-  
+
   nextPid: function() {
     this.setPage(this.pageIndex + 1);
   },
-  
+
   previousPid: function() {
     this.setPage(this.pageIndex - 1);
   },
-  
+
   loadText: function() {
  /*   var container = this.ui.textContainer;
     container.html('');
-    jQuery.get(this.teiUrl(this.currentPid()), function(data) { 
-      container.html(data); 
+    jQuery.get(this.teiUrl(this.currentPid()), function(data) {
+      container.html(data);
       }, 'html');*/
   },
-  
+
   getPrintUrl: function() {
     var imageExtent = this.map.getMaxExtent();
-    var aspect = imageExtent.getWidth() / imageExtent.getHeight();      
+    var aspect = imageExtent.getWidth() / imageExtent.getHeight();
     var scale = aspect > 1.3333 ? "600,0" : "0,800";
     var level = '3'; // TODO calculate
-    
+
     // assemble url
-    var imageUrl = this.djatokaUrl(this.currentPid()) + '/getRegion?uid=' + this.uid + '&level=' + level + '&scale=' + scale; 
+    var imageUrl = this.djatokaUrl(this.currentPid()) + '/getRegion?uid=' + this.uid + '&level=' + level + '&scale=' + scale;
     var printUrl = '/iiv/print.html?pid=' + this.currentPid() + '&image=' + escape(imageUrl);
-    
+
     return printUrl;
   }
 });
@@ -194,11 +194,11 @@ iiv.Viewer.UI = new iiv.Class({
   //textPanel: null,
   //textContainer: null,
   buttonPrint: null,
-  
+
   initialize: function(options) {
     this.createUI();
   },
-  
+
   createDiv: function(parent, cssClass) {
     var div = jQuery('<div class="' + cssClass + '"></div>');
     parent.append(div);
@@ -217,26 +217,26 @@ iiv.Viewer.UI = new iiv.Class({
     this.createZoomControls(toolbar);
     //this.createPageControls(toolbar);
     //this.createOtherControls(toolbar);
-    
+
     var canvas = this.createDiv(ui, 'iiv-canvas')
     //this.textPanel = this.createDiv(canvas, 'iiv-text-panel');
     //this.textContainer = this.createDiv(this.textPanel, 'iiv-text-container');
-    
+
     this.imagePanel = this.createDiv(canvas, 'iiv-image-panel');
     this.imagePanel.attr('id', 'iiv-image-panel');
-        
+
     var clear = this.createDiv(container, 'iiv-clear');
 
     jQuery('.ui-state-default').hover (
-        function(){ 
-          jQuery(this).addClass("ui-state-hover"); 
+        function(){
+          jQuery(this).addClass("ui-state-hover");
         },
-        function(){ 
-          jQuery(this).removeClass("ui-state-hover"); 
+        function(){
+          jQuery(this).removeClass("ui-state-hover");
         }
     );
   },
-  
+
   createZoomControls: function(toolbar) {
     var controls = this.createControlSet(toolbar, 'zoom');
     this.buttonZoomIn = this.createButton(controls, 'zoom-in', 'Zoom in', 'ui-icon-plus');
@@ -245,10 +245,10 @@ iiv.Viewer.UI = new iiv.Class({
     this.sliderZoom = this.createZoomSlider(controls, 'zoom-slider', 'Change zoom level');
     return controls;
   },
-  
+
   createPageControls: function(toolbar) {
-    
-    var controls = this.createControlSet(toolbar, 'page');    
+
+    var controls = this.createControlSet(toolbar, 'page');
     this.buttonPagePrevious = this.createButton(controls, 'page-previous', 'Previous page', 'ui-icon-arrowthick-1-w');
     this.createPageNumberDisplay(controls);
     this.buttonPageNext = this.createButton(controls, 'page-next', 'Next page', 'ui-icon-arrowthick-1-e');
@@ -256,12 +256,12 @@ iiv.Viewer.UI = new iiv.Class({
   },
 
   createOtherControls: function(toolbar) {
-    var controls = this.createControlSet(toolbar, 'other');    
+    var controls = this.createControlSet(toolbar, 'other');
     //this.buttonText = this.createButton(controls, 'text', 'Show text', 'iiv-icon-text');
     this.buttonPrint = this.createButton(controls, 'print', 'Print page', 'ui-icon-print');
     return controls;
   },
-  
+
   createPageNumberDisplay: function(parent) {
     var container = this.createDiv(parent, 'iiv-page-number');
     this.currentPageSpan = jQuery('<span class="current">-</span>');
@@ -271,89 +271,89 @@ iiv.Viewer.UI = new iiv.Class({
     container.append(this.maxPageSpan);
     return container;
   },
- 
+
   createControlSet: function(parent, name) {
     var controls = this.createDiv(parent, 'iiv-controlset ' + name);
     parent.append(controls);
     return controls;
   },
-  
+
   createButton: function(parent, name, title, iconClass) {
     var button = jQuery('<button class="' + name + ' ui-corner-all ui-state-default" title="' + title + '"><span class="ui-icon ' + iconClass + '"></span></button>');
     parent.append(button);
     return button;
   },
-  
-  createZoomSlider: function(parent, name, tooltip, sliderOptions) { 
+
+  createZoomSlider: function(parent, name, tooltip, sliderOptions) {
     var container = this.createDiv(parent, 'iiv-slider-container ui-corner-bottom');
     container.attr('title', tooltip);
-    
+
     var slider = this.createDiv(container, 'iiv-slider ' + name);
     slider.slider(sliderOptions);
-    
+
     parent.append(slider);
         return slider;
   },
-  
-  
-  initializeUI: function() {    
+
+
+  initializeUI: function() {
     this.addInterceptors();
     this.sliderZoom.slider('option', 'min', 0);
     this.sliderZoom.slider('option', 'max', this.viewer.map.getNumZoomLevels() - 1);
 
     this.updateZoomControls(this.viewer.map.getZoom());
-    
+
     this.addEventHandlers();
   },
-  
+
   addInterceptors: function() {
     var ui = this;
     ui.viewer.intercept(this.viewer.map, 'setCenter', function(lonlat, zoom, dragging, forceZoomChange) {
       if (zoom != null && zoom != ui.viewer.map.getZoom()) {
-        ui.updateZoomControls(zoom);        
+        ui.updateZoomControls(zoom);
       }
-      
+
       ui.viewer.map.setCenter_without_interceptor(lonlat, zoom, dragging, forceZoomChange);
     });
   },
-    
+
   addEventHandlers: function() {
     var viewerUI = this;
     viewerUI.buttonZoomIn.click(function() {
       viewerUI.viewer.map.zoomIn();
     });
-    
+
     viewerUI.buttonZoomOut.click(function() {
       viewerUI.viewer.map.zoomOut();
     });
-    
+
     viewerUI.buttonZoomMax.click(function() {
       viewerUI.viewer.map.zoomToMaxExtent();
     });
-       
+
     viewerUI.sliderZoom.bind('slidestop', function(event, ui) {
       viewerUI.viewer.map.zoomTo(ui.value);
     });
   },
-  
+
   printPage: function() {
     var url = this.viewer.getPrintUrl();
-    
+
     // open popup window
     var popupWidth = Math.max(312, Math.min(624, window.screen.availWidth));
     var popupHeight = Math.max(312, Math.min(824 / 2, window.screen.availHeight));
     var features = 'width=' + popupWidth + ',height=' + popupHeight;
     window.open(url, '_blank', features);
   },
-  
+
   updatePageControls: function(page) {
     this.sliderPage.slider('value', page)
     this.currentPageSpan.text(page + 1);
-    
+
     if (page == 0) {
       this.disable(this.buttonPagePrevious);
     }
-    
+
     else {
       this.enable(this.buttonPagePrevious);
     }
@@ -361,19 +361,19 @@ iiv.Viewer.UI = new iiv.Class({
     if (page == this.sliderPage.slider('option', 'max')) {
       this.disable(this.buttonPageNext);
     }
-    
+
     else {
       this.enable(this.buttonPageNext);
     }
-  },  
-  
+  },
+
   updateZoomControls: function(zoom) {
     this.sliderZoom.slider('value', zoom);
 
     if (zoom == this.sliderZoom.slider('option', 'min')) {
       this.disable(this.buttonZoomOut);
     }
-    
+
     else {
       this.enable(this.buttonZoomOut);
     }
@@ -381,20 +381,20 @@ iiv.Viewer.UI = new iiv.Class({
     if (zoom == this.sliderZoom.slider('option', 'max')) {
       this.disable(this.buttonZoomIn);
     }
-    
+
     else {
       this.enable(this.buttonZoomIn);
     }
   },
-  
+
   disable: function(button) {
     button.attr('disabled', 'disabled');
   },
-  
+
   enable: function(button) {
     button.removeAttr('disabled');
   },
-  
+
   toggleText: function() {
     this.buttonText.toggleClass('ui-state-active');
     this.buttonText.toggleClass('ui-state-default');
@@ -410,29 +410,29 @@ iiv.Viewer.RISearch = new iiv.Class({
   format: 'csv',
   query: null,
   results: null,
-  
+
   initialize: function(options) {
-  
+
     if (!this.query) {
       if (this.cmodel == 'ilives:bookCModel') {
-        this.query = 'select $object from <#ri> ' 
-          + 'where ($object <fedora-model:hasModel> <fedora:ilives:pageCModel> ' 
-          + 'and $object <fedora-rels-ext:isMemberOf> <fedora:' + this.pid + '>) ' 
+        this.query = 'select $object from <#ri> '
+          + 'where ($object <fedora-model:hasModel> <fedora:ilives:pageCModel> '
+          + 'and $object <fedora-rels-ext:isMemberOf> <fedora:' + this.pid + '>) '
           + 'order by $object';
       }
 
       else if (this.cmodel == 'ilives:pageCModel') {
-        this.query = 'select $parent ' 
-          + 'subquery (' 
-          + '  select $sibling from <#ri> ' 
-          + '  where $sibling <fedora-rels-ext:isMemberOf> $parent ' 
-          + '  and $sibling <fedora-model:hasModel> <fedora:ilives:pageCModel> ' 
-          + '  order by $sibling) ' 
-          + 'from <#ri> ' 
-          + 'where $child <mulgara:is> <fedora:' + this.pid + '> ' 
-          + 'and $child <fedora-rels-ext:isMemberOf> $parent ' 
+        this.query = 'select $parent '
+          + 'subquery ('
+          + '  select $sibling from <#ri> '
+          + '  where $sibling <fedora-rels-ext:isMemberOf> $parent '
+          + '  and $sibling <fedora-model:hasModel> <fedora:ilives:pageCModel> '
+          + '  order by $sibling) '
+          + 'from <#ri> '
+          + 'where $child <mulgara:is> <fedora:' + this.pid + '> '
+          + 'and $child <fedora-rels-ext:isMemberOf> $parent '
           + 'and $parent <fedora-model:hasModel> <fedora:ilives:bookCModel>';
-      } 
+      }
       else if (this.cmodel == 'islandora:sp_large_image_cmodel') {
         this.query = 'select $parent '
           + 'subquery ('
@@ -444,16 +444,16 @@ iiv.Viewer.RISearch = new iiv.Class({
           + 'where $child <mulgara:is> <fedora:' + this.pid + '> '
           + 'and $child <fedora-rels-ext:isMemberOfCollection> $parent '
           + 'and $parent <fedora-model:hasModel> <fedora:islandora:collectionCModel>';
-      } 
+      }
       else {
         // no query -- pid will be used alone.
         this.query = 'select  $object from <#ri>'
         + 'where $object <mulgara:is> \'' + this.pid + '\'';
       }
-    
+
     }
   },
-  
+
   search: function() {
     if (this.query == null) {
 
@@ -468,7 +468,7 @@ iiv.Viewer.RISearch = new iiv.Class({
           query: this.query,
           uid: this.uid
       };
-      
+
       jQuery.post(this.fedoraUrl + '/risearch', options, this.createCallback(), 'text');
     }
   },
@@ -476,12 +476,12 @@ iiv.Viewer.RISearch = new iiv.Class({
   extractPid: function(riSearchResult) {
     return riSearchResult.replace(/^.*\//, '');
   },
-  
+
   createCallback: function() {
     var riSearch = this;
-  
+
     return function(data, status) {
-      var results = [];  
+      var results = [];
       if ('success' == status) {
         var lines = data.split("\n");
         for (i = 0; i < lines.length; i++) {
@@ -490,7 +490,7 @@ iiv.Viewer.RISearch = new iiv.Class({
           }
         }
       }
-      
+
       riSearch.searchCallback(results);
     }
   }
@@ -502,18 +502,18 @@ iiv.Viewer.ImageLayer = OpenLayers.Class(OpenLayers.Layer.OpenURL, {
   uid: null,
 
   /**
-   * this implementation is the same as the superclass, except that we use a 
-   * fedora service as the url base, not djatoka itself 
+   * this implementation is the same as the superclass, except that we use a
+   * fedora service as the url base, not djatoka itself
    */
   getURL: function(bounds) {
-    bounds = this.adjustBounds(bounds);    
+    bounds = this.adjustBounds(bounds);
     this.calculatePositionAndSize(bounds);
     var z = this.map.getZoom() + this.zoomOffset;
-    
+
     // uid and djatokaUrl set in createImageLayer
-    var path = this.djatokaUrl + '/getRegion?uid=' + this.uid + '&level=' + z 
+    var path = this.djatokaUrl + '/getRegion?uid=' + this.uid + '&level=' + z
       + '&region=' + this.tilePos.lat + "," + this.tilePos.lon + "," + this.imageSize.h + "," + this.imageSize.w;
-    
+
     var url = this.url;
     if (url instanceof Array) {
         url = this.selectUrl(path, url);
