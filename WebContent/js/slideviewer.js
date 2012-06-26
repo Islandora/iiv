@@ -120,15 +120,15 @@ iiv.Viewer = new iiv.Class({
   },
     
   djatokaUrl: function(pid) {
-    return this.pidUrl(pid) + '/ilives:jp2Sdef';
+    return this.pidUrl(pid) + '/methods/ilives:jp2Sdef';
   },
   
   pidUrl: function(pid) {
-    return this.fedoraUrl + '/get/' + pid;
+    return this.fedoraUrl + '/objects/' + pid;
   },
   
   teiUrl: function(pid) {
-    return this.fedoraUrl + '/get/' + pid + '/ilives:tei2htmlSdef/tei2html?uid=' + this.uid;
+    return this.pidUrl(pid) + '/methods/ilives:tei2htmlSdef/tei2html?uid=' + this.uid;
   },
   
   setPage: function(index) {

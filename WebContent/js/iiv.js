@@ -120,19 +120,19 @@ iiv.Viewer = new iiv.Class({
   },
     
   djatokaUrl: function(pid) {
-    return this.pidUrl(pid) + '/islandora:jp2Sdef';
+    return this.pidUrl(pid) + '/methods/islandora:jp2Sdef';
   },
   
   pidUrl: function(pid) {
-    return this.fedoraUrl + '/get/' + pid;
+    return this.fedoraUrl + '/objects/' + pid;
   },
   
   teiUrl: function(pid) {
-    return this.fedoraUrl + '/get/' + pid + '/islandora:tei2htmlSdef/tei2html?uid=' + this.uid;
+    return this.pidUrl(pid) + '/methods/islandora:tei2htmlSdef/tei2html?uid=' + this.uid;
   },
   
   newspaperTextUrl: function(pid) {
-  	return this.fedoraUrl + '/get/' + pid + '/OCR?uid=' + this.uid;
+  	return this.pidUrl(pid) + '/OCR?uid=' + this.uid;
   },
   
   setPage: function(index) {
@@ -566,13 +566,12 @@ iiv.Viewer.RISearch = new iiv.Class({
     }
   },
 
- extractPid: function(riSearchResult) {
+  extractPid: function(riSearchResult) {
     if(riSearchResult.indexOf(",") > 0){
         riSearchResult = riSearchResult.substring(0,riSearchResult.indexOf(","));
     }
-     return riSearchResult.replace(/^.*\//, '');
+    return riSearchResult.replace(/^.*\//, '');
   },
-
   
   createCallback: function() {
     var riSearch = this;
